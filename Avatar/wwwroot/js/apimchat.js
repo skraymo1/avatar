@@ -17,7 +17,10 @@ var spokenTextQueue = []
 var sessionActive = false
 var lastSpeakTime
 var imgUrl = ""
-//var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiYWRtaW4iOnRydWUsImV4cCI6MTcyNjM1NDMyOX0._3BRuuv4CVH_yDtJJtPdglI8zXpK_cdaYODWKNHMQes"
+
+var speechEndpoint = 'https://kravatardemo.azure-api.net/speech/avatar'
+var ttsEndpoint = 'wss://kravatardemo.azure-api.net/tts_socket'
+var sttEndpoint = 'wss://kravatardemo.azure-api.net/stt_socket'
 // Connect to avatar service
 function connectAvatar() {
     const cogSvcRegion = document.getElementById('region').value
@@ -38,8 +41,7 @@ function connectAvatar() {
     if (privateEndpointEnabled) {
         speechSynthesisConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(`wss://${privateEndpoint}/tts/cognitiveservices/websocket/v1?enableTalkingAvatar=true`), cogSvcSubKey) 
     } else {
-        speechSynthesisConfig = SpeechSDK.SpeechConfig.fromSubscription(cogSvcSubKey, cogSvcRegion)
-        //speechSynthesisConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(`wss://{APIM SOCKET ENDPOINT}`), cogSvcSubKey)
+        speechSynthesisConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(ttsEndpoint), cogSvcSubKey)
         //speechSynthesisConfig.authorizationToken=token
     }
     speechSynthesisConfig.endpointId = document.getElementById('customVoiceEndpointId').value
@@ -57,12 +59,9 @@ function connectAvatar() {
 
         console.log("Event received: " + e.description + offsetMessage)
     }
-    //wss://westus2.stt.speech.microsoft.com/speech/universal/v2?language=en-US&format=simple&lidEnabled=true&Ocp-Apim-Subscription-Key=5055a233fbe54e64a61250fdc470df70&X-ConnectionId=F2BD2C16B10E4D2D80009AC8F9BF3CDD
-
-    const speechRecognitionConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(`wss://${cogSvcRegion}.stt.speech.microsoft.com/speech/universal/v2`), cogSvcSubKey)
-    //const speechRecognitionConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(`wss://{{APIM SOCKET ENDPOINT}`), cogSvcSubKey)
+    
+    const speechRecognitionConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(sttEndpoint), cogSvcSubKey)
     //speechRecognitionConfig.authorizationToken=token
-        //`wss://${cogSvcRegion}.stt.speech.microsoft.com/speech/universal/v2`), "5055a233fbe54e64a61250fdc470df70")//cogSvcSubKey)
     //const speechRecognitionConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(`wss://avatarapimdev.azure-api.net/speechsocket`), cogSvcSubKey)
     speechRecognitionConfig.setProperty(SpeechSDK.PropertyId.SpeechServiceConnection_LanguageIdMode, "Continuous")
     var sttLocales = document.getElementById('sttLocales').value.split(',')
@@ -103,8 +102,8 @@ function connectAvatar() {
     if (privateEndpointEnabled) {
         xhr.open("GET", `https://${privateEndpoint}/tts/cognitiveservices/avatar/relay/token/v1`)
     } else {
-        xhr.open("GET", `https://${cogSvcRegion}.tts.speech.microsoft.com/cognitiveservices/avatar/relay/token/v1`)
-        //xhr.open("GET", `{{APIM SPEECH ENDPOINT}}`)
+        //xhr.open("GET", `https://${cogSvcRegion}.tts.speech.microsoft.com/cognitiveservices/avatar/relay/token/v1`)
+        xhr.open("GET", speechEndpoint)
     }
     //https://avatarapimdev.azure-api.net/speech/avatar
     //https://${cogSvcRegion}.tts.speech.microsoft.com/cognitiveservices/avatar/relay/token/v1
@@ -418,7 +417,6 @@ function handleUserQuery(userQuery, userQueryHTML, imgUrlPath) {
     const azureOpenAIDeploymentName = document.getElementById('azureOpenAIDeploymentName').value
 
     let url = "{AOAIEndpoint}/openai/deployments/{AOAIDeployment}/chat/completions?api-version=2023-06-01-preview".replace("{AOAIEndpoint}", azureOpenAIEndpoint).replace("{AOAIDeployment}", azureOpenAIDeploymentName)
-    //let url = "{AOAIEndpoint}/deployments/{AOAIDeployment}/chat/completions?api-version=2023-06-01-preview".replace("{AOAIEndpoint}", azureOpenAIEndpoint).replace("{AOAIDeployment}", azureOpenAIDeploymentName)
     let body = JSON.stringify({
         messages: messages,
         stream: true
@@ -426,7 +424,6 @@ function handleUserQuery(userQuery, userQueryHTML, imgUrlPath) {
 
     if (dataSources.length > 0) {
         url = "{AOAIEndpoint}/openai/deployments/{AOAIDeployment}/extensions/chat/completions?api-version=2023-06-01-preview".replace("{AOAIEndpoint}", azureOpenAIEndpoint).replace("{AOAIDeployment}", azureOpenAIDeploymentName)
-        //url = "{AOAIEndpoint}/deployments/{AOAIDeployment}/extensions/chat/completions?api-version=2023-06-01-preview".replace("{AOAIEndpoint}", azureOpenAIEndpoint).replace("{AOAIDeployment}", azureOpenAIDeploymentName)
         body = JSON.stringify({
             dataSources: dataSources,
             messages: messages,
