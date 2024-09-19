@@ -18,13 +18,16 @@ var sessionActive = false
 var lastSpeakTime
 var imgUrl = ""
 
-var speechEndpoint = 'https://kravatardemo.azure-api.net/speech/avatar'
-var ttsEndpoint = 'wss://kravatardemo.azure-api.net/tts_socket'
-var sttEndpoint = 'wss://kravatardemo.azure-api.net/stt_socket'
+
 // Connect to avatar service
 function connectAvatar() {
-    const cogSvcRegion = document.getElementById('region').value
+    const speechEndpoint = 'https://' + document.getElementById('apimEndpoint').value + '/speech/avatar'
+    const ttsEndpoint = 'wss://' + document.getElementById('apimEndpoint').value + '/tts_socket'
+    const sttEndpoint = 'wss://' + document.getElementById('apimEndpoint').value + '/stt_socket'
     const cogSvcSubKey = document.getElementById('APIKey').value
+    const azureOpenAIEndpoint = 'https://' + document.getElementById('apimEndpoint').value + '/aoai'
+    const azureOpenAIApiKey = document.getElementById('APIKey').value
+
     if (cogSvcSubKey === '') {
         alert('Please fill in the API key of your speech resource.')
         return
@@ -42,7 +45,6 @@ function connectAvatar() {
         speechSynthesisConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(`wss://${privateEndpoint}/tts/cognitiveservices/websocket/v1?enableTalkingAvatar=true`), cogSvcSubKey) 
     } else {
         speechSynthesisConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(ttsEndpoint), cogSvcSubKey)
-        //speechSynthesisConfig.authorizationToken=token
     }
     speechSynthesisConfig.endpointId = document.getElementById('customVoiceEndpointId').value
 
@@ -61,15 +63,11 @@ function connectAvatar() {
     }
     
     const speechRecognitionConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(sttEndpoint), cogSvcSubKey)
-    //speechRecognitionConfig.authorizationToken=token
-    //const speechRecognitionConfig = SpeechSDK.SpeechConfig.fromEndpoint(new URL(`wss://avatarapimdev.azure-api.net/speechsocket`), cogSvcSubKey)
     speechRecognitionConfig.setProperty(SpeechSDK.PropertyId.SpeechServiceConnection_LanguageIdMode, "Continuous")
     var sttLocales = document.getElementById('sttLocales').value.split(',')
     var autoDetectSourceLanguageConfig = SpeechSDK.AutoDetectSourceLanguageConfig.fromLanguages(sttLocales)
     speechRecognizer = SpeechSDK.SpeechRecognizer.FromConfig(speechRecognitionConfig, autoDetectSourceLanguageConfig, SpeechSDK.AudioConfig.fromDefaultMicrophoneInput())
 
-    const azureOpenAIEndpoint = document.getElementById('azureOpenAIEndpoint').value
-    const azureOpenAIApiKey = document.getElementById('azureOpenAIApiKey').value
     const azureOpenAIDeploymentName = document.getElementById('azureOpenAIDeploymentName').value
     if (azureOpenAIEndpoint === '' || azureOpenAIApiKey === '' || azureOpenAIDeploymentName === '') {
         alert('Please fill in the Azure OpenAI endpoint, API key and deployment name.')
@@ -102,11 +100,8 @@ function connectAvatar() {
     if (privateEndpointEnabled) {
         xhr.open("GET", `https://${privateEndpoint}/tts/cognitiveservices/avatar/relay/token/v1`)
     } else {
-        //xhr.open("GET", `https://${cogSvcRegion}.tts.speech.microsoft.com/cognitiveservices/avatar/relay/token/v1`)
         xhr.open("GET", speechEndpoint)
     }
-    //https://avatarapimdev.azure-api.net/speech/avatar
-    //https://${cogSvcRegion}.tts.speech.microsoft.com/cognitiveservices/avatar/relay/token/v1
     
     xhr.setRequestHeader("Ocp-Apim-Subscription-Key", cogSvcSubKey)
     xhr.addEventListener("readystatechange", function() {
@@ -412,8 +407,8 @@ function handleUserQuery(userQuery, userQueryHTML, imgUrlPath) {
         speak(getQuickReply(), 2000)
     }
 
-    const azureOpenAIEndpoint = document.getElementById('azureOpenAIEndpoint').value
-    const azureOpenAIApiKey = document.getElementById('azureOpenAIApiKey').value
+    const azureOpenAIEndpoint = 'https://' + document.getElementById('apimEndpoint').value + '/aoai'
+    const azureOpenAIApiKey = document.getElementById('APIKey').value
     const azureOpenAIDeploymentName = document.getElementById('azureOpenAIDeploymentName').value
 
     let url = "{AOAIEndpoint}/openai/deployments/{AOAIDeployment}/chat/completions?api-version=2023-06-01-preview".replace("{AOAIEndpoint}", azureOpenAIEndpoint).replace("{AOAIDeployment}", azureOpenAIDeploymentName)
